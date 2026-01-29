@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: podnest-db
+    restart: always
+    environment:
+      MYSQL_DATABASE: podnest
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-kantha@23}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - podnest-network
+
+  backend:
+    build: ./backend
+    container_name: podnest-api
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - DB_URL=jdbc:mysql://db:3306/podnest?createDatabaseIfNotExist=true
+      - DB_USERNAME=root
+      - DB_PASSWORD=${DB_PASSWORD:-kantha@23}
+    ports:
+      - "8080:8080"
+    networks:
+      - podnest-network
+
+  frontend:
+    build: ./frontend
+    container_name: podnest-ui
+    restart: always
+    depends_on:
+      - backend
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080/api
+    ports:
+      - "80:80"
+    networks:
+      - podnest-network
+
+networks:
+  podnest-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
